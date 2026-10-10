@@ -60,6 +60,25 @@ Run the mocked Lua regression checks from the project directory:
 npm exec --yes --package=fengari-node-cli -- fengari tests/tooltip.lua
 ```
 
+## Packaging and releases
+
+Run `python3 scripts/package.py` to generate `dist/YardsToKm-<version>-classic.zip`.
+The ZIP contains a single `YardsToKm/` folder with only the addon files,
+README, and license; Git metadata, tests, and tooling are excluded.
+
+GitHub Actions checks Lua 5.1 syntax, runs the tooltip regression tests, and
+builds a downloadable ZIP artifact on pushes, pull requests, and manual runs.
+To publish a new version:
+
+1. Update `## Version` in `YardsToKm.toc`, commit, and push.
+2. Create a GitHub release tagged `v<version>` at that commit; mark betas as
+   pre-releases.
+3. The workflow verifies that the tag matches the manifest and attaches the
+   installable ZIP. Upload that ZIP to CurseForge with the matching game version.
+
+Do not replace an existing release's ZIP with different code; publish a new
+version instead. CurseForge uploads remain manual for now.
+
 ## License
 
 MIT; see [LICENSE](LICENSE).

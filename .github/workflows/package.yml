@@ -1,0 +1,53 @@
+name: Test and package addon
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install Lua 5.1
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lua5.1
+      - name: Check syntax and tooltip behavior
+        run: |
+          luac5.1 -p YardsToKm.lua
+          lua5.1 tests/tooltip.lua
+      - name: Build installable ZIP
+        run: python3 scripts/package.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: YardsToKm-classic
+          path: dist/*.zip
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'release'
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Verify release version and build ZIP
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version=$(sed -n 's/^## Version: //p' YardsToKm.toc)
+          test "$RELEASE_TAG" = "v$version"
+          python3 scripts/package.py
+      - name: Attach ZIP to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" dist/*.zip
