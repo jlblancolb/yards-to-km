@@ -1,0 +1,37 @@
+name: Bug report
+description: Report incorrect conversion, tooltip issues, or Lua errors.
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Include the exact displayed text and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the spell, tooltip, or UI element and whether you were in combat.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: WoW client and addon versions
+      placeholder: Classic Era 1.15.9; YardsToKm 0.1.0-beta.1
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Settings and other addons
+      description: Include UI language, unit mode, precision, and addons affecting the display.
+    validations:
+      required: true
+  - type: textarea
+    id: errors
+    attributes:
+      label: Lua errors or screenshots
+      description: Optional. Remove personal details, account information, and private chat first.

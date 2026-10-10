@@ -1,7 +1,22 @@
 # Yards to Kilometers
 
+[![Test and package addon](https://github.com/jlblancolb/yards-to-km/actions/workflows/package.yml/badge.svg)](https://github.com/jlblancolb/yards-to-km/actions/workflows/package.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A World of Warcraft Classic Era addon that best-effort converts detectable yard
 measurements in UI text to meters or kilometers.
+
+**Classic Era 1.15.9, including Hardcore. Currently in beta.**
+
+## Features
+
+- Converts English yard labels in accessible UI text and spell tooltips.
+- Uses meters for short distances and kilometers for long distances automatically.
+- Offers kilometers-only mode and compact or precise formatting.
+- Converts both ends of ranges: `8-35 yd range` becomes `7 m - 32 m range`
+  in the default compact mode.
+- Saves settings account-wide and refreshes converted text when settings change.
+- Changes displayed text only, never spell ranges or game mechanics.
 
 ## Install
 
@@ -10,11 +25,21 @@ Download the installable ZIP from
 its `YardsToKm` folder into your Classic Era `Interface/AddOns` directory.
 Use the attached addon ZIP, not GitHub's automatically generated source ZIP.
 
-Copy the `YardsToKm` project folder into
-`World of Warcraft/_classic_era_/Interface/AddOns/`. The installed files should
-be at `AddOns/YardsToKm/YardsToKm.toc`, `AddOns/YardsToKm/YardsToKm.lua`, and
-`AddOns/YardsToKm/Icon.tga`; the folder and `.toc` filenames match.
-Enable **Yards to Kilometers** from the AddOns list.
+The installed folder should look like:
+
+```text
+World of Warcraft/_classic_era_/Interface/AddOns/YardsToKm/
+    YardsToKm.toc
+    YardsToKm.lua
+    Icon.tga
+    README.md
+    LICENSE
+```
+
+Keep the folder named `YardsToKm` so it matches `YardsToKm.toc`. Restart WoW
+after the first installation and enable **Yards to Kilometers** in the AddOns
+list. For Lua-only updates to an existing installation, overwrite the files
+and run `/reload`.
 
 ## Use
 
@@ -31,6 +56,12 @@ Automatic units are the default: distances below 1,000 meters are shown in
 meters and longer distances in kilometers. Ranges such as `10-20 yards` are
 converted at both ends and show a unit for each endpoint. `/ytk on`, `/ytk off`,
 and `/ytk scan` are also available in chat. Settings are saved account-wide.
+
+| Command | Purpose |
+| --- | --- |
+| `/ytk on` | Enable conversion |
+| `/ytk off` | Disable conversion and restore tracked original text |
+| `/ytk scan` | Scan for additional UI text regions |
 
 ## Coverage
 
@@ -54,7 +85,18 @@ English yard unit names are currently supported.
 
 ## Development
 
-Run the mocked Lua regression checks from the project directory:
+Fork the repository and clone your fork into a folder named `YardsToKm`.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing, and pull-request
+guidelines. The runtime has no external addon dependencies.
+
+With Lua 5.1 installed, run from the project directory:
+
+```sh
+luac5.1 -p YardsToKm.lua
+lua5.1 tests/tooltip.lua
+```
+
+Alternatively, run the mocked regression checks with Node.js/npm:
 
 ```sh
 npm exec --yes --package=fengari-node-cli -- fengari tests/tooltip.lua
@@ -78,6 +120,16 @@ To publish a new version:
 
 Do not replace an existing release's ZIP with different code; publish a new
 version instead. CurseForge uploads remain manual for now.
+
+## Support and contributions
+
+[Report a bug or suggest a feature](https://github.com/jlblancolb/yards-to-km/issues/new/choose).
+For display issues, include the exact unconverted text, client/addon versions,
+UI language, and other addons affecting the tooltip. Remove personal details
+from screenshots and error logs before sharing them.
+
+Contributions are welcome through pull requests; please read
+[CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 ## License
 
