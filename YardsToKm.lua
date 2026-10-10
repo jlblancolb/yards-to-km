@@ -89,10 +89,13 @@ local function RefreshFontString(fontString)
         if type(text) ~= "string" then
             return
         end
-        originalTexts[fontString] = text
     end
 
-    local displayText = YardsToKmDB.enabled and ConvertYards(text) or text
+    local converted = ConvertYards(text)
+    if converted ~= text then
+        originalTexts[fontString] = text
+    end
+    local displayText = YardsToKmDB.enabled and converted or text
     displayedTexts[fontString] = displayText
     if displayText ~= fontString:GetText() then
         SetFontStringText(fontString, displayText)
@@ -112,7 +115,7 @@ local function ConvertFontString(fontString)
 
     local text = fontString:GetText()
     if type(text) == "string" then
-        originalTexts[fontString] = text
+        originalTexts[fontString] = nil
     else
         originalTexts[fontString] = nil
         displayedTexts[fontString] = nil

@@ -2,7 +2,7 @@
 ## Title: Yards to Kilometers
 ## Notes: Best-effort conversion of yard measurements in UI text.
 ## Author: jlblancolb
-## Version: 0.1.0-beta.1
+## Version: 0.1.0-beta.2
 ## IconTexture: Interface\AddOns\YardsToKm\Icon.tga
 ## SavedVariables: YardsToKmDB
 

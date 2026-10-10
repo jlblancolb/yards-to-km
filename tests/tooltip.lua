@@ -19,8 +19,10 @@ function text:SetFormattedText(format, ...)
 end
 
 local tooltip = { scripts = {} }
+local label = { text = "Compact" }
+setmetatable(label, { __index = text })
 function tooltip:IsObjectType(kind) return kind == "GameTooltip" end
-function tooltip:GetRegions() return text end
+function tooltip:GetRegions() return text, label end
 function tooltip:HasScript() return true end
 function tooltip:HookScript(event, callback) self.scripts[event] = callback end
 
@@ -42,10 +44,14 @@ tooltip.scripts.OnTooltipSetSpell(tooltip)
 assert(text.text == "7 m - 32 m range", text.text)
 
 tooltip.scripts.OnUpdate(tooltip, 0.1)
+-- Button:SetText can change its label natively, bypassing FontString hooks.
+label.text = "Precise"
 SlashCmdList.YARDSTOKM("off")
 assert(text.text == "8-35 yd range", text.text)
+assert(label.text == "Precise", "Settings refresh restored a stale button label")
 SlashCmdList.YARDSTOKM("on")
 assert(text.text == "7 m - 32 m range", text.text)
+assert(label.text == "Precise", "Enabling conversion changed an unrelated label")
 
 text.text = "40 yd range"
 tooltip.scripts.OnUpdate(tooltip, 0.05)
