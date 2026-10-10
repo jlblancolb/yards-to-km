@@ -1,18 +1,65 @@
 # Yards to Kilometers
 
-A World of Warcraft Classic Era Hardcore addon exploring broad, best-effort
-conversion of yard measurements to kilometers in accessible UI text.
+A World of Warcraft Classic Era addon that best-effort converts detectable yard
+measurements in UI text to meters or kilometers.
 
-## Conversion
+## Install
 
-1 yard = 0.0009144 kilometers.
+Download the installable ZIP from
+[GitHub Releases](https://github.com/jlblancolb/yards-to-km/releases) and extract
+its `YardsToKm` folder into your Classic Era `Interface/AddOns` directory.
+Use the attached addon ZIP, not GitHub's automatically generated source ZIP.
 
-The addon cannot guarantee conversion of every display. Other addons may render
-text in ways that are not accessible to it, and protected UI elements may not
-be safely modified, particularly during combat. Unsupported values should be
-left unchanged.
+Copy the `YardsToKm` project folder into
+`World of Warcraft/_classic_era_/Interface/AddOns/`. The installed files should
+be at `AddOns/YardsToKm/YardsToKm.toc`, `AddOns/YardsToKm/YardsToKm.lua`, and
+`AddOns/YardsToKm/Icon.tga`; the folder and `.toc` filenames match.
+Enable **Yards to Kilometers** from the AddOns list.
 
-## Target
+## Use
 
-- World of Warcraft Classic Era Hardcore
-- Best-effort conversion of detectable yard values in accessible UI text
+Conversion is enabled by default and applies to detectable numeric values
+followed by `yard`, `yards`, `yd`, or `yds`. Open **Options → AddOns → Yards to
+Kilometers** to configure:
+
+- **Conversion:** enable or disable display conversion.
+- **Units:** automatically use meters/kilometers, or always use kilometers.
+- **Precision:** compact (whole meters / thousandths of a kilometer) or precise
+  (tenths of a meter / ten-thousandths of a kilometer).
+
+Automatic units are the default: distances below 1,000 meters are shown in
+meters and longer distances in kilometers. Ranges such as `10-20 yards` are
+converted at both ends and show a unit for each endpoint. `/ytk on`, `/ytk off`,
+and `/ytk scan` are also available in chat. Settings are saved account-wide.
+
+## Coverage
+
+The addon hooks accessible UI text regions and periodically rescans for newly
+created ones, so visible spell tooltips or range labels that expose yard values
+may be converted automatically, including text set through formatted font
+string calls. Visible tooltip text is also checked every 0.1 seconds to catch
+native spell-range updates and later changes made by other addons.
+This changes only displayed text: spell range checks and the
+game's underlying yard-based APIs remain unchanged. Other game and addon UI
+text may not be accessible, and hyperlink or texture markup is left unchanged.
+Review converted displays for layout changes, especially in protected UI.
+
+## Beta compatibility
+
+The first beta targets Classic Era 1.15.9 (including Hardcore).
+Spell tooltip conversion has been confirmed in-game by the initial tester.
+Compatibility with all other addons and protected UI during combat is not yet
+verified. This is best-effort display conversion, not a change to game mechanics.
+English yard unit names are currently supported.
+
+## Development
+
+Run the mocked Lua regression checks from the project directory:
+
+```sh
+npm exec --yes --package=fengari-node-cli -- fengari tests/tooltip.lua
+```
+
+## License
+
+MIT; see [LICENSE](LICENSE).
