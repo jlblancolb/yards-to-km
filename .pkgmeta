@@ -1,0 +1,9 @@
+package-as: YardsToKm
+
+ignore:
+  - tests
+  - scripts
+  - dist
+  - CONTRIBUTING.md
+
+enable-nolib-creation: no

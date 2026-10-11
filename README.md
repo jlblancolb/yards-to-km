@@ -116,10 +116,28 @@ To publish a new version:
 2. Create a GitHub release tagged `v<version>` at that commit; mark betas as
    pre-releases.
 3. The workflow verifies that the tag matches the manifest and attaches the
-   installable ZIP. Upload that ZIP to CurseForge with the matching game version.
+   installable ZIP.
 
 Do not replace an existing release's ZIP with different code; publish a new
-version instead. CurseForge uploads remain manual for now.
+version instead.
+
+### CurseForge source integration
+
+The repository's `.pkgmeta` keeps the installed folder named `YardsToKm`,
+excludes development files, and disables the unnecessary no-library package.
+CurseForge automatically excludes dot-prefixed files and folders.
+
+In the CurseForge project's **Source** settings, select **GitHub**, enter
+`https://github.com/jlblancolb/yards-to-km`, and enable packaging for **tagged
+commits only**. Once connected, new version tags can trigger CurseForge's own
+packager independently of GitHub Actions; manual ZIP uploads are the fallback.
+
+Connect the repository before creating the next version tag. Existing beta
+tags predate this configuration; do not move or recreate them. After the first
+automated upload, verify that the ZIP contains `YardsToKm/YardsToKm.toc`, that
+Classic Era 1.15.9 is selected, and that the file's beta/release designation
+matches the intended release. The integration is not enabled by committing
+`.pkgmeta` alone; the project owner must save the CurseForge Source settings.
 
 ## Support and contributions
 
