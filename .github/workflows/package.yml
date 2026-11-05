@@ -22,6 +22,7 @@ jobs:
         run: |
           luac5.1 -p YardsToKm.lua
           lua5.1 tests/tooltip.lua
+          lua5.1 tests/mainline.lua
       - name: Build installable ZIP
         run: python3 scripts/package.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
