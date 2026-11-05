@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- New **Display** option: show yards and metric together, such as `30 yd (27 m)`.
+- New **Decimal separator** option: decimal comma (`0,5 km`) for players who use it.
+- Ranges written with "to", such as `8 to 35 yards`, are now converted.
+- Settings panel buttons are aligned in one column; new `/ytk replace`,
+  `/ytk both`, `/ytk point` and `/ytk comma` shortcuts.
+- CI uses Node.js 24 releases of its GitHub Actions.
+
 ## 1.0.0 (2026-11-05)
 
 First stable release.

@@ -23,17 +23,38 @@ end
 if YardsToKmDB.enabled == nil then
     YardsToKmDB.enabled = true
 end
-if YardsToKmDB.unitMode ~= "km" then
-    YardsToKmDB.unitMode = "auto"
+
+-- Cycling display options. Each value name doubles as its /ytk command, and the
+-- first value is the default.
+local OPTIONS = {
+    { key = "unitMode", label = "Units", values = {
+        { "auto", "Automatic (m / km)" }, { "km", "Kilometers only" } } },
+    { key = "precision", label = "Number precision", values = {
+        { "compact", "Compact" }, { "precise", "Precise" } } },
+    { key = "display", label = "Display", values = {
+        { "replace", "Metric only" }, { "both", "Yards and metric" } } },
+    { key = "decimal", label = "Decimal separator", values = {
+        { "point", "Point (0.5)" }, { "comma", "Comma (0,5)" } } },
+}
+
+local function OptionValueIndex(option)
+    for index, value in ipairs(option.values) do
+        if value[1] == YardsToKmDB[option.key] then
+            return index
+        end
+    end
 end
-if YardsToKmDB.precision ~= "precise" then
-    YardsToKmDB.precision = "compact"
+
+for _, option in ipairs(OPTIONS) do
+    if not OptionValueIndex(option) then
+        YardsToKmDB[option.key] = option.values[1][1]
+    end
 end
 
 local function FormatDistance(yardsText)
     local yards = tonumber((yardsText:gsub(",", "")))
     if not yards then
-        return yardsText, ""
+        return yardsText
     end
 
     local meters = yards * 0.9144
@@ -49,28 +70,50 @@ local function FormatDistance(yardsText)
     end
 
     value = value:gsub("(%..-)0+$", "%1"):gsub("%.$", "")
-    return value, unit
+    if YardsToKmDB.decimal == "comma" then
+        value = value:gsub("%.", ",")
+    end
+    return value .. " " .. unit
+end
+
+local NUMBER_PATTERN = "%f[%d](%d[%d,]*%.?%d*)"
+-- Pattern separator, then the separator written between converted endpoints.
+local RANGE_SEPARATORS = {
+    { "%s*%-%s*", " - " }, { "%s*–%s*", " - " }, { "%s*—%s*", " - " },
+    { "%s+[Tt][Oo]%s+", " to " },
+}
+
+-- True when a measurement ending before `position` is already followed by a
+-- metric value in parentheses, as "Yards and metric" display writes it.
+local function HasMetricSuffix(text, position)
+    return text:find("^%s*%(%d[%d.,]*%s*k?m%f[%A]", position) ~= nil
+end
+
+local function Present(original, metric)
+    if YardsToKmDB.display == "both" then
+        return original .. " (" .. metric .. ")"
+    end
+    return metric
 end
 
 local function ReplaceMeasurements(text, unitPattern)
-    local numberPattern = "%f[%d](%d[%d,]*%.?%d*)"
-    local dashPatterns = { "%-", "–", "—" }
+    local unitSuffix = "%s*" .. unitPattern .. ")%f[%A]()"
 
-    for _, dashPattern in ipairs(dashPatterns) do
-        local rangePattern = numberPattern .. "(%s*" .. dashPattern .. "%s*)" ..
-            numberPattern .. "%s*" .. unitPattern .. "%f[%A]"
-        text = text:gsub(rangePattern, function(first, _, second)
-            local firstValue, firstUnit = FormatDistance(first)
-            local secondValue, secondUnit = FormatDistance(second)
-            return firstValue .. " " .. firstUnit .. " - " ..
-                secondValue .. " " .. secondUnit
+    for _, separator in ipairs(RANGE_SEPARATORS) do
+        local rangePattern = "(" .. NUMBER_PATTERN .. separator[1] .. NUMBER_PATTERN .. unitSuffix
+        text = text:gsub(rangePattern, function(original, first, second, position)
+            if HasMetricSuffix(text, position) then
+                return original
+            end
+            return Present(original, FormatDistance(first) .. separator[2] .. FormatDistance(second))
         end)
     end
 
-    local singlePattern = numberPattern .. "%s*" .. unitPattern .. "%f[%A]"
-    return text:gsub(singlePattern, function(value)
-        local converted, unit = FormatDistance(value)
-        return converted .. " " .. unit
+    return text:gsub("(" .. NUMBER_PATTERN .. unitSuffix, function(original, value, position)
+        if HasMetricSuffix(text, position) then
+            return original
+        end
+        return Present(original, FormatDistance(value))
     end)
 end
 
@@ -223,11 +266,16 @@ local function PrintStatus(message)
     DEFAULT_CHAT_FRAME:AddMessage("|cff33ff99" .. addonName .. ":|r " .. message)
 end
 
+local function OptionLabel(option)
+    return option.values[OptionValueIndex(option)][2]
+end
+
 local function UpdateSettingsControls()
     if settingsControls.enabled then
         settingsControls.enabled:SetChecked(YardsToKmDB.enabled)
-        settingsControls.unitMode:SetText(YardsToKmDB.unitMode == "auto" and "Automatic (m / km)" or "Kilometers only")
-        settingsControls.precision:SetText(YardsToKmDB.precision == "compact" and "Compact" or "Precise")
+        for _, option in ipairs(OPTIONS) do
+            settingsControls[option.key]:SetText(OptionLabel(option))
+        end
     end
 end
 
@@ -266,27 +314,21 @@ local function CreateSettingsPanel()
     end)
     settingsControls.enabled = enabled
 
-    local unitsLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    unitsLabel:SetPoint("TOPLEFT", enabled, "BOTTOMLEFT", 0, -20)
-    unitsLabel:SetText("Units")
-    local unitsButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    unitsButton:SetSize(190, 24)
-    unitsButton:SetPoint("LEFT", unitsLabel, "RIGHT", 100, 0)
-    unitsButton:SetScript("OnClick", function()
-        SetSetting("unitMode", YardsToKmDB.unitMode == "auto" and "km" or "auto")
-    end)
-    settingsControls.unitMode = unitsButton
-
-    local precisionLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
-    precisionLabel:SetPoint("TOPLEFT", unitsLabel, "BOTTOMLEFT", 0, -30)
-    precisionLabel:SetText("Number precision")
-    local precisionButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    precisionButton:SetSize(190, 24)
-    precisionButton:SetPoint("LEFT", precisionLabel, "RIGHT", 100, 0)
-    precisionButton:SetScript("OnClick", function()
-        SetSetting("precision", YardsToKmDB.precision == "compact" and "precise" or "compact")
-    end)
-    settingsControls.precision = precisionButton
+    local previous, gap = enabled, -20
+    for _, option in ipairs(OPTIONS) do
+        local label = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+        label:SetPoint("TOPLEFT", previous, "BOTTOMLEFT", 0, gap)
+        label:SetText(option.label)
+        local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+        button:SetSize(190, 24)
+        button:SetPoint("LEFT", label, "LEFT", 180, 0)
+        button:SetScript("OnClick", function()
+            local nextValue = option.values[OptionValueIndex(option) % #option.values + 1]
+            SetSetting(option.key, nextValue[1])
+        end)
+        settingsControls[option.key] = button
+        previous, gap = label, -30
+    end
 
     local category = Settings.RegisterCanvasLayoutCategory(panel, addonName)
     Settings.RegisterAddOnCategory(category)
@@ -297,11 +339,15 @@ SLASH_YARDSTOKM1 = "/ytk"
 local slashSettings = {
     on = { "enabled", true, "yard conversion enabled." },
     off = { "enabled", false, "yard conversion disabled." },
-    auto = { "unitMode", "auto", "units set to automatic (m / km)." },
-    km = { "unitMode", "km", "units set to kilometers only." },
-    compact = { "precision", "compact", "precision set to compact." },
-    precise = { "precision", "precise", "precision set to precise." },
 }
+local commandNames = { "on", "off" }
+for _, option in ipairs(OPTIONS) do
+    for _, value in ipairs(option.values) do
+        slashSettings[value[1]] = { option.key, value[1], option.label:lower() .. " set to " .. value[2] .. "." }
+        commandNames[#commandNames + 1] = value[1]
+    end
+end
+commandNames[#commandNames + 1] = "scan"
 
 SlashCmdList.YARDSTOKM = function(message)
     local command = (message or ""):lower():match("^%s*(%S*)")
@@ -314,11 +360,12 @@ SlashCmdList.YARDSTOKM = function(message)
         ScanFrames()
         PrintStatus("scanned UI text.")
     else
-        PrintStatus(("conversion %s, units %s, precision %s."):format(
-            YardsToKmDB.enabled and "on" or "off",
-            YardsToKmDB.unitMode == "auto" and "automatic (m / km)" or "kilometers only",
-            YardsToKmDB.precision))
-        PrintStatus("commands: on, off, auto, km, compact, precise, scan. Settings are also under Options > AddOns.")
+        local status = { "conversion " .. (YardsToKmDB.enabled and "on" or "off") }
+        for _, option in ipairs(OPTIONS) do
+            status[#status + 1] = option.label:lower() .. " " .. OptionLabel(option)
+        end
+        PrintStatus(table.concat(status, ", ") .. ".")
+        PrintStatus("commands: " .. table.concat(commandNames, ", ") .. ". Settings are also under Options > AddOns.")
     end
 end
 
