@@ -112,7 +112,7 @@ npm exec --yes --package=fengari-node-cli -- fengari tests/mainline.lua
 
 ## Packaging and releases
 
-Run `python3 scripts/package.py` to generate `dist/YardsToKm-<version>-classic.zip`.
+Run `python3 scripts/package.py` to generate `dist/YardsToKm-<version>.zip`.
 The ZIP contains a single `YardsToKm/` folder with only the addon files,
 README, and license; Git metadata, tests, and tooling are excluded.
 
