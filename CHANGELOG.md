@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-11-05)
 
 - New **Display** option: show yards and metric together, such as `30 yd (27 m)`.
 - New **Decimal separator** option: decimal comma (`0,5 km`) for players who use it.
