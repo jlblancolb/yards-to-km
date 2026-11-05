@@ -14,7 +14,9 @@ detectable yard measurements in UI text to meters or kilometers.
 - Uses meters for short distances and kilometers for long distances automatically.
 - Offers kilometers-only mode and compact or precise formatting.
 - Converts both ends of ranges: `8-35 yd range` becomes `7 m - 32 m range`
-  in the default compact mode.
+  in the default compact mode, and `8 to 35 yards` becomes `7 m to 32 m`.
+- Can show both units side by side, such as `30 yd (27 m)`.
+- Offers a decimal comma (`0,5 km`) as well as a decimal point.
 - Saves settings account-wide and refreshes converted text when settings change.
 - Changes displayed text only, never spell ranges or game mechanics.
 
@@ -54,10 +56,12 @@ Kilometers** to configure:
 - **Units:** automatically use meters/kilometers, or always use kilometers.
 - **Precision:** compact (whole meters / thousandths of a kilometer) or precise
   (tenths of a meter / ten-thousandths of a kilometer).
+- **Display:** metric only (`27 m`), or yards and metric (`30 yd (27 m)`).
+- **Decimal separator:** point (`0.5 km`) or comma (`0,5 km`).
 
 Automatic units are the default: distances below 1,000 meters are shown in
-meters and longer distances in kilometers. Ranges such as `10-20 yards` are
-converted at both ends and show a unit for each endpoint. Settings are saved
+meters and longer distances in kilometers. Ranges such as `10-20 yards` or
+`10 to 20 yards` are converted at both ends and show a unit for each endpoint. Settings are saved
 account-wide and can also be changed in chat:
 
 | Command | Purpose |
@@ -67,6 +71,8 @@ account-wide and can also be changed in chat:
 | `/ytk off` | Disable conversion and restore tracked original text |
 | `/ytk auto` / `/ytk km` | Automatic m / km, or kilometers only |
 | `/ytk compact` / `/ytk precise` | Compact or precise numbers |
+| `/ytk replace` / `/ytk both` | Metric only, or yards and metric |
+| `/ytk point` / `/ytk comma` | Decimal point or decimal comma |
 | `/ytk scan` | Scan for additional UI text regions |
 
 ## Coverage

@@ -3,7 +3,7 @@ SlashCmdList = {}
 local messages = {}
 DEFAULT_CHAT_FRAME = { AddMessage = function(_, message) messages[#messages + 1] = message end }
 C_Timer = { NewTicker = function() end }
-YardsToKmDB = { enabled = "yes", unitMode = "miles", precision = 7 }
+YardsToKmDB = { enabled = "yes", unitMode = "miles", precision = 7, display = "bogus", decimal = "comma" }
 
 function hooksecurefunc(object, method, callback)
     local original = object[method]
@@ -37,6 +37,8 @@ eventFrame.callback(eventFrame, "ADDON_LOADED", "YardsToKm")
 assert(YardsToKmDB.enabled == "yes")
 assert(YardsToKmDB.unitMode == "auto", YardsToKmDB.unitMode)
 assert(YardsToKmDB.precision == "compact", tostring(YardsToKmDB.precision))
+assert(YardsToKmDB.display == "replace", YardsToKmDB.display)
+assert(YardsToKmDB.decimal == "comma", YardsToKmDB.decimal)
 
 local function check(input, expected)
     line:SetText(input)
@@ -47,7 +49,7 @@ local function mode(...)
     for _, command in ipairs({ ... }) do SlashCmdList.YARDSTOKM(command) end
 end
 
-mode("auto", "compact")
+mode("auto", "compact", "point")
 check("30 yd range", "27 m range")
 check("Range 30 yards.", "Range 27 m.")
 check("1 Yard", "1 m")
@@ -75,6 +77,34 @@ check("30 yd", "0.027 km")
 mode("precise")
 check("30 yd", "0.0274 km")
 
+-- "to" ranges keep their wording.
+mode("auto", "compact")
+check("8 to 35 yards", "7 m to 32 m")
+check("Up to 30 yd away", "Up to 27 m away")
+
+mode("comma", "precise")
+check("30 yd", "27,4 m")
+check("10,000 yards", "9,144 km")
+mode("point", "compact")
+
+mode("both")
+check("30 yd range", "30 yd (27 m) range")
+check("8-35 yd range", "8-35 yd (7 m - 32 m) range")
+check("8 to 35 Yards", "8 to 35 Yards (7 m to 32 m)")
+check("30 yards (5 sec)", "30 yards (27 m) (5 sec)")
+-- Text that already carries a metric value is not converted twice.
+check("30 yd (27 m)", "30 yd (27 m)")
+check("8-35 yd (7 m - 32 m)", "8-35 yd (7 m - 32 m)")
+mode("replace")
+assert(line.text == "8-35 yd (7 m - 32 m)", line.text)
+
+-- Switching display re-renders tracked text from its original.
+check("30 yd", "27 m")
+mode("both")
+assert(line.text == "30 yd (27 m)", line.text)
+mode("replace")
+assert(line.text == "27 m", line.text)
+
 mode("off")
 assert(line.text == "30 yd", line.text)
 mode("on", "auto", "compact")
@@ -82,6 +112,8 @@ assert(line.text == "27 m", line.text)
 
 messages = {}
 SlashCmdList.YARDSTOKM("")
-assert(messages[1]:find("conversion on, units automatic %(m / km%), precision compact%."), messages[1])
-assert(messages[2]:find("commands:"), messages[2])
+local status = "conversion on, units Automatic (m / km), number precision Compact, " ..
+    "display Metric only, decimal separator Point (0.5)."
+assert(messages[1]:find(status, 1, true), messages[1])
+assert(messages[2]:find("on, off, auto, km, compact, precise, replace, both, point, comma, scan", 1, true), messages[2])
 print("Formatting, slash commands, and saved-variable defaults passed")
