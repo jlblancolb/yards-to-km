@@ -5,7 +5,7 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 ROOT = Path(__file__).resolve().parent.parent
-FILES = ("YardsToKm.toc", "YardsToKm.lua", "Icon.tga", "README.md", "LICENSE")
+FILES = ("YardsToKm.toc", "YardsToKm.lua", "Icon.tga", "README.md", "CHANGELOG.md", "LICENSE")
 
 
 def package():

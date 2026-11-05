@@ -6,7 +6,7 @@
 A World of Warcraft Classic Era and WoW Forever addon that best-effort converts
 detectable yard measurements in UI text to meters or kilometers.
 
-**Classic Era 1.15.9 (including Hardcore) and WoW Forever 1.60. Currently in beta.**
+**Supports Classic Era 1.15.9 (including Hardcore) and WoW Forever 1.60.**
 
 ## Features
 
@@ -35,6 +35,7 @@ World of Warcraft/_forever_/Interface/AddOns/YardsToKm/       (WoW Forever)
     YardsToKm.lua
     Icon.tga
     README.md
+    CHANGELOG.md
     LICENSE
 ```
 
@@ -56,13 +57,16 @@ Kilometers** to configure:
 
 Automatic units are the default: distances below 1,000 meters are shown in
 meters and longer distances in kilometers. Ranges such as `10-20 yards` are
-converted at both ends and show a unit for each endpoint. `/ytk on`, `/ytk off`,
-and `/ytk scan` are also available in chat. Settings are saved account-wide.
+converted at both ends and show a unit for each endpoint. Settings are saved
+account-wide and can also be changed in chat:
 
 | Command | Purpose |
 | --- | --- |
+| `/ytk` | Show current settings and the command list |
 | `/ytk on` | Enable conversion |
 | `/ytk off` | Disable conversion and restore tracked original text |
+| `/ytk auto` / `/ytk km` | Automatic m / km, or kilometers only |
+| `/ytk compact` / `/ytk precise` | Compact or precise numbers |
 | `/ytk scan` | Scan for additional UI text regions |
 
 ## Coverage
@@ -77,17 +81,18 @@ game's underlying yard-based APIs remain unchanged. Other game and addon UI
 text may not be accessible, and hyperlink or texture markup is left unchanged.
 Review converted displays for layout changes, especially in protected UI.
 
-## Beta compatibility
+## Compatibility
 
-The first beta targets Classic Era 1.15.9 (including Hardcore). WoW Forever
-support (interface 16001) is new and has only been tested with mocks so far;
-Forever uses the modern Mainline UI, so spell tooltips are hooked through
-tooltip data callbacks there, and text the client marks as secret is left
-unconverted.
-Spell tooltip conversion has been confirmed in-game by the initial tester.
-Compatibility with all other addons and protected UI during combat is not yet
-verified. This is best-effort display conversion, not a change to game mechanics.
-English yard unit names are currently supported.
+One package supports Classic Era 1.15.9 (interface 11509, including Hardcore)
+and WoW Forever 1.60 (interface 16001). Spell tooltips, settings, and combat
+have been checked in-game on both clients. Forever uses the modern Mainline
+UI, so spell tooltips are hooked through tooltip data callbacks there, and
+text the client marks as secret is left unconverted.
+
+This is best-effort display conversion, not a change to game mechanics. English
+yard unit names are supported. Not every other addon has been tested; please
+[report](https://github.com/jlblancolb/yards-to-km/issues/new/choose) any
+conflicts. See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Development
 
@@ -95,20 +100,14 @@ Fork the repository and clone your fork into a folder named `YardsToKm`.
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, testing, and pull-request
 guidelines. The runtime has no external addon dependencies.
 
-With Lua 5.1 installed, run from the project directory:
+Run every check from the project directory:
 
 ```sh
-luac5.1 -p YardsToKm.lua
-lua5.1 tests/tooltip.lua
-lua5.1 tests/mainline.lua
+scripts/test.sh
 ```
 
-Alternatively, run the mocked regression checks with Node.js/npm:
-
-```sh
-npm exec --yes --package=fengari-node-cli -- fengari tests/tooltip.lua
-npm exec --yes --package=fengari-node-cli -- fengari tests/mainline.lua
-```
+It uses Lua 5.1 and `luacheck` when installed (as in CI), and otherwise runs
+the mocked regression tests through Node.js/npm with fengari.
 
 ## Packaging and releases
 

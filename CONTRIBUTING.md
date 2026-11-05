@@ -32,18 +32,14 @@ WoW Forever `Interface/AddOns` directory. Do not rename the manifest or install 
 Run these commands from the repository directory:
 
 ```sh
-luac5.1 -p YardsToKm.lua
-lua5.1 tests/tooltip.lua
-lua5.1 tests/mainline.lua
+scripts/test.sh
 python3 scripts/package.py
 git diff --check
 ```
 
-If Lua is unavailable, the existing test can also run with:
-
-```sh
-npm exec --yes --package=fengari-node-cli -- fengari tests/tooltip.lua
-```
+`scripts/test.sh` runs the Lua 5.1 syntax check, `luacheck`, and every
+`tests/*.lua` file. Without Lua 5.1 it falls back to fengari through npm and
+skips the tools that aren't installed; CI always runs all of them.
 
 Mocked tests do not prove behavior in WoW. For display changes, also check:
 
