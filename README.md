@@ -3,10 +3,10 @@
 [![Test and package addon](https://github.com/jlblancolb/yards-to-km/actions/workflows/package.yml/badge.svg)](https://github.com/jlblancolb/yards-to-km/actions/workflows/package.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A World of Warcraft Classic Era addon that best-effort converts detectable yard
-measurements in UI text to meters or kilometers.
+A World of Warcraft Classic Era and WoW Forever addon that best-effort converts
+detectable yard measurements in UI text to meters or kilometers.
 
-**Classic Era 1.15.9, including Hardcore. Currently in beta.**
+**Classic Era 1.15.9 (including Hardcore) and WoW Forever 1.60. Currently in beta.**
 
 ## Features
 
@@ -22,13 +22,15 @@ measurements in UI text to meters or kilometers.
 
 Download the installable ZIP from
 [GitHub Releases](https://github.com/jlblancolb/yards-to-km/releases) and extract
-its `YardsToKm` folder into your Classic Era `Interface/AddOns` directory.
+its `YardsToKm` folder into your Classic Era or WoW Forever `Interface/AddOns`
+directory. The same ZIP works on both clients.
 Use the attached addon ZIP, not GitHub's automatically generated source ZIP.
 
 The installed folder should look like:
 
 ```text
-World of Warcraft/_classic_era_/Interface/AddOns/YardsToKm/
+World of Warcraft/_classic_era_/Interface/AddOns/YardsToKm/   (Classic Era)
+World of Warcraft/_forever_/Interface/AddOns/YardsToKm/       (WoW Forever)
     YardsToKm.toc
     YardsToKm.lua
     Icon.tga
@@ -77,7 +79,11 @@ Review converted displays for layout changes, especially in protected UI.
 
 ## Beta compatibility
 
-The first beta targets Classic Era 1.15.9 (including Hardcore).
+The first beta targets Classic Era 1.15.9 (including Hardcore). WoW Forever
+support (interface 16001) is new and has only been tested with mocks so far;
+Forever uses the modern Mainline UI, so spell tooltips are hooked through
+tooltip data callbacks there, and text the client marks as secret is left
+unconverted.
 Spell tooltip conversion has been confirmed in-game by the initial tester.
 Compatibility with all other addons and protected UI during combat is not yet
 verified. This is best-effort display conversion, not a change to game mechanics.
@@ -94,12 +100,14 @@ With Lua 5.1 installed, run from the project directory:
 ```sh
 luac5.1 -p YardsToKm.lua
 lua5.1 tests/tooltip.lua
+lua5.1 tests/mainline.lua
 ```
 
 Alternatively, run the mocked regression checks with Node.js/npm:
 
 ```sh
 npm exec --yes --package=fengari-node-cli -- fengari tests/tooltip.lua
+npm exec --yes --package=fengari-node-cli -- fengari tests/mainline.lua
 ```
 
 ## Packaging and releases
@@ -135,7 +143,7 @@ packager independently of GitHub Actions; manual ZIP uploads are the fallback.
 Connect the repository before creating the next version tag. Existing beta
 tags predate this configuration; do not move or recreate them. After the first
 automated upload, verify that the ZIP contains `YardsToKm/YardsToKm.toc`, that
-Classic Era 1.15.9 is selected, and that the file's beta/release designation
+Classic Era 1.15.9 and WoW Forever are selected, and that the file's beta/release designation
 matches the intended release. The integration is not enabled by committing
 `.pkgmeta` alone; the project owner must save the CurseForge Source settings.
 

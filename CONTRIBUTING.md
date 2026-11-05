@@ -10,13 +10,15 @@ welcome. Discuss large behavior changes in an issue before implementing them.
 3. Create a branch for your change.
 4. Install Lua 5.1 for syntax checks and tests; Python 3 is needed for packaging.
 
-Copy the addon files into a folder named `YardsToKm` in Classic Era's
-`Interface/AddOns` directory. Do not rename the manifest or install a nested
+Copy the addon files into a folder named `YardsToKm` in the Classic Era or
+WoW Forever `Interface/AddOns` directory. Do not rename the manifest or install a nested
 `YardsToKm/YardsToKm` folder. Run `/reload` after changing Lua files.
 
 ## Implementation guidelines
 
-- Keep the addon compatible with Classic Era and Lua 5.1.
+- Keep the addon compatible with Classic Era, WoW Forever, and Lua 5.1.
+  Forever uses the modern Mainline UI: guard client-specific APIs, skip
+  forbidden frames, and never compare or parse secret values.
 - Change presentation only; do not modify range checks or game mechanics.
 - Preserve original text so settings changes and disabling conversion work.
 - Keep unsupported text intact, including hyperlinks and texture markup.
@@ -32,6 +34,7 @@ Run these commands from the repository directory:
 ```sh
 luac5.1 -p YardsToKm.lua
 lua5.1 tests/tooltip.lua
+lua5.1 tests/mainline.lua
 python3 scripts/package.py
 git diff --check
 ```

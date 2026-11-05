@@ -5,6 +5,17 @@ local originalTexts = setmetatable({}, { __mode = "k" })
 local displayedTexts = setmetatable({}, { __mode = "k" })
 local hookedTooltips = setmetatable({}, { __mode = "k" })
 local settingsControls = {}
+-- Mainline clients (Retail, WoW Forever) can hand addons secret values that
+-- error when compared or parsed; Classic Era has no such function.
+local issecretvalue = issecretvalue
+
+local function IsReadableText(text)
+    return type(text) == "string" and not (issecretvalue and issecretvalue(text))
+end
+
+local function IsForbidden(object)
+    return type(object.IsForbidden) == "function" and object:IsForbidden()
+end
 
 if type(YardsToKmDB) ~= "table" then
     YardsToKmDB = {}
@@ -83,10 +94,17 @@ local function SetFontStringText(fontString, text)
 end
 
 local function RefreshFontString(fontString)
+    local currentText = fontString:GetText()
+    if currentText ~= nil and not IsReadableText(currentText) then
+        originalTexts[fontString] = nil
+        displayedTexts[fontString] = nil
+        return
+    end
+
     local text = originalTexts[fontString]
     if text == nil then
-        text = fontString:GetText()
-        if type(text) ~= "string" then
+        text = currentText
+        if text == nil then
             return
         end
     end
@@ -97,7 +115,7 @@ local function RefreshFontString(fontString)
     end
     local displayText = YardsToKmDB.enabled and converted or text
     displayedTexts[fontString] = displayText
-    if displayText ~= fontString:GetText() then
+    if displayText ~= currentText then
         SetFontStringText(fontString, displayText)
     end
 end
@@ -113,11 +131,8 @@ local function ConvertFontString(fontString)
         return
     end
 
-    local text = fontString:GetText()
-    if type(text) == "string" then
-        originalTexts[fontString] = nil
-    else
-        originalTexts[fontString] = nil
+    originalTexts[fontString] = nil
+    if not IsReadableText(fontString:GetText()) then
         displayedTexts[fontString] = nil
         return
     end
@@ -144,7 +159,7 @@ local function RefreshTooltip(tooltip)
         if region:IsObjectType("FontString") then
             -- Native tooltip updates can bypass the Lua text setter hooks.
             local text = region:GetText()
-            if text ~= displayedTexts[region] then
+            if IsReadableText(text) and text ~= displayedTexts[region] then
                 ConvertFontString(region)
             end
             HookFontString(region)
@@ -153,7 +168,7 @@ local function RefreshTooltip(tooltip)
 end
 
 local function HookTooltip(tooltip)
-    if hookedTooltips[tooltip] or not tooltip:IsObjectType("GameTooltip") then
+    if hookedTooltips[tooltip] or IsForbidden(tooltip) or not tooltip:IsObjectType("GameTooltip") then
         return
     end
 
@@ -175,13 +190,29 @@ end
 local function ScanFrames()
     local frame = EnumerateFrames()
     while frame do
-        HookTooltip(frame)
-        local regions = { frame:GetRegions() }
-        for _, region in ipairs(regions) do
-            HookFontString(region)
+        if not IsForbidden(frame) then
+            HookTooltip(frame)
+            for _, region in ipairs({ frame:GetRegions() }) do
+                HookFontString(region)
+            end
         end
         frame = EnumerateFrames(frame)
     end
+end
+
+local function HookSpellTooltipData()
+    -- Mainline removed OnTooltipSetSpell in favor of tooltip data post-calls.
+    if not (TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall
+        and Enum and Enum.TooltipDataType and Enum.TooltipDataType.Spell) then
+        return
+    end
+
+    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Spell, function(tooltip)
+        if tooltip and not IsForbidden(tooltip) then
+            HookTooltip(tooltip)
+            RefreshTooltip(tooltip)
+        end
+    end)
 end
 
 local function PrintStatus(message)
@@ -283,6 +314,7 @@ eventFrame:SetScript("OnEvent", function(_, event, loadedAddon)
     if event == "ADDON_LOADED" then
         if loadedAddon == addonName then
             ScanFrames()
+            HookSpellTooltipData()
             CreateSettingsPanel()
         end
     elseif event == "PLAYER_LOGIN" then
