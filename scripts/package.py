@@ -14,7 +14,7 @@ def package():
     if not match:
         raise ValueError("Missing or invalid version in YardsToKm.toc")
 
-    destination = ROOT / "dist" / f"YardsToKm-{match[1]}-classic.zip"
+    destination = ROOT / "dist" / f"YardsToKm-{match[1]}.zip"
     destination.parent.mkdir(exist_ok=True)
     with ZipFile(destination, "w", compression=ZIP_DEFLATED) as archive:
         for name in FILES:
