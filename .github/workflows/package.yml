@@ -16,13 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Install Lua 5.1
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq lua5.1
-      - name: Check syntax and tooltip behavior
-        run: |
-          luac5.1 -p YardsToKm.lua
-          lua5.1 tests/tooltip.lua
-          lua5.1 tests/mainline.lua
+      - name: Install Lua 5.1 and luacheck
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq lua5.1 lua-check
+      - name: Check syntax, lint, and run tests
+        run: scripts/test.sh
       - name: Build installable ZIP
         run: python3 scripts/package.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

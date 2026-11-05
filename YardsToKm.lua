@@ -75,6 +75,10 @@ local function ReplaceMeasurements(text, unitPattern)
 end
 
 local function ConvertYards(text)
+    -- Most UI text has no yard value; skip the pattern passes for it.
+    if not text:find("[Yy]") or not text:find("%d") then
+        return text
+    end
     if text:find("|H", 1, true) or text:find("|T", 1, true) then
         return text
     end
@@ -290,20 +294,31 @@ local function CreateSettingsPanel()
 end
 
 SLASH_YARDSTOKM1 = "/ytk"
+local slashSettings = {
+    on = { "enabled", true, "yard conversion enabled." },
+    off = { "enabled", false, "yard conversion disabled." },
+    auto = { "unitMode", "auto", "units set to automatic (m / km)." },
+    km = { "unitMode", "km", "units set to kilometers only." },
+    compact = { "precision", "compact", "precision set to compact." },
+    precise = { "precision", "precise", "precision set to precise." },
+}
+
 SlashCmdList.YARDSTOKM = function(message)
     local command = (message or ""):lower():match("^%s*(%S*)")
+    local setting = slashSettings[command]
 
-    if command == "on" then
-        SetSetting("enabled", true)
-        PrintStatus("yard conversion enabled.")
-    elseif command == "off" then
-        SetSetting("enabled", false)
-        PrintStatus("yard conversion disabled.")
+    if setting then
+        SetSetting(setting[1], setting[2])
+        PrintStatus(setting[3])
     elseif command == "scan" then
         ScanFrames()
         PrintStatus("scanned UI text.")
     else
-        PrintStatus("use /ytk on, /ytk off, or /ytk scan; configure display under Options > AddOns.")
+        PrintStatus(("conversion %s, units %s, precision %s."):format(
+            YardsToKmDB.enabled and "on" or "off",
+            YardsToKmDB.unitMode == "auto" and "automatic (m / km)" or "kilometers only",
+            YardsToKmDB.precision))
+        PrintStatus("commands: on, off, auto, km, compact, precise, scan. Settings are also under Options > AddOns.")
     end
 end
 
