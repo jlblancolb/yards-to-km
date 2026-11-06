@@ -5,6 +5,8 @@ local originalTexts = setmetatable({}, { __mode = "k" })
 local displayedTexts = setmetatable({}, { __mode = "k" })
 local hookedTooltips = setmetatable({}, { __mode = "k" })
 local settingsControls = {}
+local settingsCategory
+local openSettingsAfterCombat = false
 -- Mainline clients (Retail, WoW Forever) can hand addons secret values that
 -- error when compared or parsed; Classic Era has no such function.
 local issecretvalue = issecretvalue
@@ -298,7 +300,7 @@ local function CreateSettingsPanel()
     end
 
     local panel = CreateFrame("Frame")
-    panel.name = addonName
+    panel.name = "Yards to Kilometers"
     panel:Hide()
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
@@ -336,9 +338,45 @@ local function CreateSettingsPanel()
         previous, gap = label, -30
     end
 
-    local category = Settings.RegisterCanvasLayoutCategory(panel, addonName)
-    Settings.RegisterAddOnCategory(category)
+    settingsCategory = Settings.RegisterCanvasLayoutCategory(panel, panel.name)
+    Settings.RegisterAddOnCategory(settingsCategory)
     UpdateSettingsControls()
+end
+
+-- The settings panel is protected UI, so wait for combat to end before opening it.
+local function OpenSettings()
+    if not settingsCategory or not Settings.OpenToCategory then
+        PrintStatus("settings panel is unavailable in this client; type /ytk for commands.")
+    elseif InCombatLockdown and InCombatLockdown() then
+        openSettingsAfterCombat = true
+        PrintStatus("settings will open when combat ends.")
+    else
+        Settings.OpenToCategory(settingsCategory:GetID())
+    end
+end
+
+-- Addon compartment (minimap addon menu) handlers, named in the TOC. Clients
+-- without the compartment ignore those TOC fields.
+function YardsToKm_OnAddonCompartmentClick(_, mouseButton)
+    if mouseButton == "RightButton" then
+        SetSetting("enabled", not YardsToKmDB.enabled)
+        PrintStatus("yard conversion " .. (YardsToKmDB.enabled and "enabled." or "disabled."))
+    else
+        OpenSettings()
+    end
+end
+
+function YardsToKm_OnAddonCompartmentEnter(_, menuButton)
+    GameTooltip:SetOwner(menuButton, "ANCHOR_LEFT")
+    GameTooltip:SetText("Yards to Kilometers")
+    GameTooltip:AddLine("Conversion " .. (YardsToKmDB.enabled and "on" or "off"), 1, 1, 1)
+    GameTooltip:AddLine("Left-click: open settings", 0.7, 0.7, 0.7)
+    GameTooltip:AddLine("Right-click: turn conversion on or off", 0.7, 0.7, 0.7)
+    GameTooltip:Show()
+end
+
+function YardsToKm_OnAddonCompartmentLeave()
+    GameTooltip:Hide()
 end
 
 SLASH_YARDSTOKM1 = "/ytk"
@@ -378,6 +416,7 @@ end
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
+eventFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 eventFrame:SetScript("OnEvent", function(_, event, loadedAddon)
     if event == "ADDON_LOADED" then
         if loadedAddon == addonName then
@@ -389,5 +428,8 @@ eventFrame:SetScript("OnEvent", function(_, event, loadedAddon)
     elseif event == "PLAYER_LOGIN" then
         ScanFrames()
         C_Timer.NewTicker(10, ScanFrames)
+    elseif event == "PLAYER_REGEN_ENABLED" and openSettingsAfterCombat then
+        openSettingsAfterCombat = false
+        OpenSettings()
     end
 end)

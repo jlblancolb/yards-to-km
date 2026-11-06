@@ -2,8 +2,11 @@
 ## Title: Yards to Kilometers
 ## Notes: Best-effort conversion of yard measurements in UI text.
 ## Author: jlblancolb
-## Version: 1.1.1
+## Version: 1.2.0
 ## IconTexture: Interface\AddOns\YardsToKm\Icon.tga
 ## SavedVariables: YardsToKmDB
+## AddonCompartmentFunc: YardsToKm_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: YardsToKm_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: YardsToKm_OnAddonCompartmentLeave
 
 YardsToKm.lua

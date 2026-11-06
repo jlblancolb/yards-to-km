@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 (2026-11-06)
+
+- WoW Forever: Yards to Kilometers appears in the minimap addon menu.
+  Left-click opens settings (after combat if you're fighting), right-click
+  turns conversion on or off, and the tooltip shows the current state.
+- The settings page is listed as **Yards to Kilometers** under Options > AddOns.
+
 ## 1.1.1 (2026-11-06)
 
 - Fixed empty **Display** and **Decimal separator** buttons (and a Lua error
