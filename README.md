@@ -75,6 +75,10 @@ account-wide and can also be changed in chat:
 | `/ytk point` / `/ytk comma` | Decimal point or decimal comma |
 | `/ytk scan` | Scan for additional UI text regions |
 
+On WoW Forever, Yards to Kilometers also appears in the minimap addon menu:
+left-click opens settings, right-click turns conversion on or off, and hovering
+shows whether conversion is on. In combat, settings open once combat ends.
+
 ## Coverage
 
 The addon hooks accessible UI text regions and periodically rescans for newly

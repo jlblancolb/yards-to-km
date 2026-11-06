@@ -2,10 +2,13 @@ std = "lua51"
 max_line_length = 120
 
 files["YardsToKm.lua"] = {
-    globals = { "YardsToKmDB", "SLASH_YARDSTOKM1", "SlashCmdList" },
+    globals = {
+        "YardsToKmDB", "SLASH_YARDSTOKM1", "SlashCmdList", "YardsToKm_OnAddonCompartmentClick",
+        "YardsToKm_OnAddonCompartmentEnter", "YardsToKm_OnAddonCompartmentLeave",
+    },
     read_globals = {
         "C_Timer", "CreateFrame", "DEFAULT_CHAT_FRAME", "EnumerateFrames", "Enum",
-        "hooksecurefunc", "issecretvalue", "Settings", "TooltipDataProcessor",
+        "GameTooltip", "hooksecurefunc", "InCombatLockdown", "issecretvalue", "Settings", "TooltipDataProcessor",
     },
 }
 

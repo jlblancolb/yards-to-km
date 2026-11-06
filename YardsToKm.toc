@@ -5,5 +5,8 @@
 ## Version: 1.1.1
 ## IconTexture: Interface\AddOns\YardsToKm\Icon.tga
 ## SavedVariables: YardsToKmDB
+## AddonCompartmentFunc: YardsToKm_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: YardsToKm_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: YardsToKm_OnAddonCompartmentLeave
 
 YardsToKm.lua
