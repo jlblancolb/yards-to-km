@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1 (2026-11-06)
+
+- Fixed empty **Display** and **Decimal separator** buttons (and a Lua error
+  when opening settings) for players upgrading from 1.0: defaults for new
+  options are now applied after saved variables load.
+- The **Convert visible yard measurements** checkbox is visible again.
+- README explains why only English clients are converted.
+
 ## 1.1.0 (2026-11-05)
 
 - New **Display** option: show yards and metric together, such as `30 yd (27 m)`.

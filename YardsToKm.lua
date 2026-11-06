@@ -17,12 +17,9 @@ local function IsForbidden(object)
     return type(object.IsForbidden) == "function" and object:IsForbidden()
 end
 
-if type(YardsToKmDB) ~= "table" then
-    YardsToKmDB = {}
-end
-if YardsToKmDB.enabled == nil then
-    YardsToKmDB.enabled = true
-end
+-- Saved variables replace this table after the file runs, so defaults are also
+-- applied again on ADDON_LOADED.
+YardsToKmDB = {}
 
 -- Cycling display options. Each value name doubles as its /ytk command, and the
 -- first value is the default.
@@ -45,11 +42,20 @@ local function OptionValueIndex(option)
     end
 end
 
-for _, option in ipairs(OPTIONS) do
-    if not OptionValueIndex(option) then
-        YardsToKmDB[option.key] = option.values[1][1]
+local function ApplySettingDefaults()
+    if type(YardsToKmDB) ~= "table" then
+        YardsToKmDB = {}
+    end
+    if YardsToKmDB.enabled == nil then
+        YardsToKmDB.enabled = true
+    end
+    for _, option in ipairs(OPTIONS) do
+        if not OptionValueIndex(option) then
+            YardsToKmDB[option.key] = option.values[1][1]
+        end
     end
 end
+ApplySettingDefaults()
 
 local function FormatDistance(yardsText)
     local yards = tonumber((yardsText:gsub(",", "")))
@@ -303,7 +309,7 @@ local function CreateSettingsPanel()
     description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
     description:SetText("Choose how converted yard distances are displayed.")
 
-    local enabled = CreateFrame("CheckButton", nil, panel)
+    local enabled = CreateFrame("CheckButton", nil, panel, "UICheckButtonTemplate")
     enabled:SetSize(26, 26)
     enabled:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -20)
     local enabledLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
@@ -375,6 +381,7 @@ eventFrame:RegisterEvent("PLAYER_LOGIN")
 eventFrame:SetScript("OnEvent", function(_, event, loadedAddon)
     if event == "ADDON_LOADED" then
         if loadedAddon == addonName then
+            ApplySettingDefaults()
             ScanFrames()
             HookSpellTooltipData()
             CreateSettingsPanel()

@@ -3,7 +3,6 @@ SlashCmdList = {}
 local messages = {}
 DEFAULT_CHAT_FRAME = { AddMessage = function(_, message) messages[#messages + 1] = message end }
 C_Timer = { NewTicker = function() end }
-YardsToKmDB = { enabled = "yes", unitMode = "miles", precision = 7, display = "bogus", decimal = "comma" }
 
 function hooksecurefunc(object, method, callback)
     local original = object[method]
@@ -31,6 +30,9 @@ function eventFrame:SetScript(_, callback) self.callback = callback end
 function CreateFrame() return eventFrame end
 
 assert(loadfile("YardsToKm.lua"))("YardsToKm")
+-- WoW restores saved variables after the file runs and before ADDON_LOADED.
+-- A 1.0 save has no display or decimal keys.
+YardsToKmDB = { enabled = "yes", unitMode = "miles", precision = 7 }
 eventFrame.callback(eventFrame, "ADDON_LOADED", "YardsToKm")
 
 -- Invalid saved values fall back to defaults; existing truthy values are kept.
@@ -38,7 +40,7 @@ assert(YardsToKmDB.enabled == "yes")
 assert(YardsToKmDB.unitMode == "auto", YardsToKmDB.unitMode)
 assert(YardsToKmDB.precision == "compact", tostring(YardsToKmDB.precision))
 assert(YardsToKmDB.display == "replace", YardsToKmDB.display)
-assert(YardsToKmDB.decimal == "comma", YardsToKmDB.decimal)
+assert(YardsToKmDB.decimal == "point", YardsToKmDB.decimal)
 
 local function check(input, expected)
     line:SetText(input)

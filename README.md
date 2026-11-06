@@ -95,10 +95,13 @@ have been checked in-game on both clients. Forever uses the modern Mainline
 UI, so spell tooltips are hooked through tooltip data callbacks there, and
 text the client marks as secret is left unconverted.
 
-This is best-effort display conversion, not a change to game mechanics. English
-yard unit names are supported. Not every other addon has been tested; please
-[report](https://github.com/jlblancolb/yards-to-km/issues/new/choose) any
-conflicts. See [CHANGELOG.md](CHANGELOG.md) for release history.
+This is best-effort display conversion, not a change to game mechanics. Only
+English clients are converted, by design: localized clients such as German,
+Russian and Korean already label the same in-game distances as meters (a German
+"35 Meter" is the English "35 yd"), so converting them would change numbers
+that players' guides and guildmates already use. Not every other addon has been
+tested; please [report](https://github.com/jlblancolb/yards-to-km/issues/new/choose)
+any conflicts. See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## Development
 
