@@ -219,8 +219,12 @@ local function HookFontString(fontString)
     RefreshFontString(fontString)
 end
 
-local function RefreshTooltip(tooltip)
-    for _, region in ipairs({ tooltip:GetRegions() }) do
+-- Walk regions as varargs instead of packing them into a table: these run for
+-- every frame on each scan and every 0.1 s on a shown tooltip, so a table per
+-- call adds up to megabytes of garbage.
+local function RefreshTooltipRegions(...)
+    for index = 1, select("#", ...) do
+        local region = select(index, ...)
         if IsObjectOfType(region, "FontString") then
             -- Native tooltip updates can bypass the Lua text setter hooks.
             local text = region:GetText()
@@ -230,6 +234,10 @@ local function RefreshTooltip(tooltip)
             HookFontString(region)
         end
     end
+end
+
+local function RefreshTooltip(tooltip)
+    RefreshTooltipRegions(tooltip:GetRegions())
 end
 
 local function HookTooltip(tooltip)
@@ -252,17 +260,23 @@ local function HookTooltip(tooltip)
     end)
 end
 
+local function HookRegions(...)
+    for index = 1, select("#", ...) do
+        HookFontString((select(index, ...)))
+    end
+end
+
+-- Called through pcall: restricted frames error on GetRegions.
+local function HookFrameRegions(frame)
+    HookRegions(frame:GetRegions())
+end
+
 local function ScanFrames()
     local frame = EnumerateFrames()
     while frame do
         if not IsForbidden(frame) then
             HookTooltip(frame)
-            local ok, regions = pcall(function() return { frame:GetRegions() } end)
-            if ok then
-                for _, region in ipairs(regions) do
-                    HookFontString(region)
-                end
-            end
+            pcall(HookFrameRegions, frame)
         end
         frame = EnumerateFrames(frame)
     end
