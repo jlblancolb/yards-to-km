@@ -1,5 +1,5 @@
 -- Mocks Mainline (Retail / WoW Forever) behavior: no OnTooltipSetSpell,
--- tooltip data post-calls, forbidden frames, and secret text values.
+-- tooltip data post-calls, forbidden and restricted frames, and secret text values.
 SlashCmdList = {}
 DEFAULT_CHAT_FRAME = { AddMessage = function() end }
 C_Timer = { NewTicker = function() end }
@@ -40,7 +40,13 @@ function forbidden:IsForbidden() return true end
 function forbidden:IsObjectType() error("touched a forbidden frame") end
 function forbidden:GetRegions() error("touched a forbidden frame") end
 
-local frames = { forbidden, tooltip }
+-- Forever's AurasNext cooldowns aren't IsForbidden but still error on access.
+local restricted = {}
+function restricted:IsForbidden() return false end
+function restricted:IsObjectType() error("calling 'IsObjectType' on bad self") end
+function restricted:GetRegions() error("calling 'GetRegions' on bad self") end
+
+local frames = { forbidden, restricted, tooltip }
 function EnumerateFrames(previous)
     for index, frame in ipairs(frames) do
         if frame == previous then return frames[index + 1] end

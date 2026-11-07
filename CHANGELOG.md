@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0 (2026-11-07)
+
+- WoW Forever: the settings page uses the game's own checkbox and dropdowns,
+  with a tooltip on each option. Classic Era keeps the existing page.
+- WoW Forever: fix a Lua error ("calling 'IsObjectType' on bad self") when
+  the frame scan reached restricted Blizzard frames such as aura cooldowns.
+
 ## 1.2.0 (2026-11-06)
 
 - WoW Forever: Yards to Kilometers appears in the minimap addon menu.

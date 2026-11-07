@@ -35,8 +35,8 @@ assert(loadfile("YardsToKm.lua"))("YardsToKm")
 YardsToKmDB = { enabled = "yes", unitMode = "miles", precision = 7 }
 eventFrame.callback(eventFrame, "ADDON_LOADED", "YardsToKm")
 
--- Invalid saved values fall back to defaults; existing truthy values are kept.
-assert(YardsToKmDB.enabled == "yes")
+-- Invalid saved values fall back to defaults; truthy on/off values become true.
+assert(YardsToKmDB.enabled == true, tostring(YardsToKmDB.enabled))
 assert(YardsToKmDB.unitMode == "auto", YardsToKmDB.unitMode)
 assert(YardsToKmDB.precision == "compact", tostring(YardsToKmDB.precision))
 assert(YardsToKmDB.display == "replace", YardsToKmDB.display)
