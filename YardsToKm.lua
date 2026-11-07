@@ -19,6 +19,13 @@ local function IsForbidden(object)
     return type(object.IsForbidden) == "function" and object:IsForbidden()
 end
 
+-- Mainline can also restrict objects that don't report IsForbidden; their
+-- methods error when called from addon code, so treat any error as "no".
+local function IsObjectOfType(object, objectType)
+    local ok, result = pcall(object.IsObjectType, object, objectType)
+    return ok and result
+end
+
 -- Saved variables replace this table after the file runs, so defaults are also
 -- applied again on ADDON_LOADED.
 YardsToKmDB = {}
@@ -26,13 +33,17 @@ YardsToKmDB = {}
 -- Cycling display options. Each value name doubles as its /ytk command, and the
 -- first value is the default.
 local OPTIONS = {
-    { key = "unitMode", label = "Units", values = {
+    { key = "unitMode", label = "Units",
+      tooltip = "Automatic shows meters below 1,000 m and kilometers above.", values = {
         { "auto", "Automatic (m / km)" }, { "km", "Kilometers only" } } },
-    { key = "precision", label = "Number precision", values = {
+    { key = "precision", label = "Number precision",
+      tooltip = "Precise shows one more decimal place.", values = {
         { "compact", "Compact" }, { "precise", "Precise" } } },
-    { key = "display", label = "Display", values = {
+    { key = "display", label = "Display",
+      tooltip = "Replace yards with metric, or keep yards and add metric in parentheses.", values = {
         { "replace", "Metric only" }, { "both", "Yards and metric" } } },
-    { key = "decimal", label = "Decimal separator", values = {
+    { key = "decimal", label = "Decimal separator",
+      tooltip = "Write decimals with a point or a comma.", values = {
         { "point", "Point (0.5)" }, { "comma", "Comma (0,5)" } } },
 }
 
@@ -48,9 +59,8 @@ local function ApplySettingDefaults()
     if type(YardsToKmDB) ~= "table" then
         YardsToKmDB = {}
     end
-    if YardsToKmDB.enabled == nil then
-        YardsToKmDB.enabled = true
-    end
+    -- Missing means on; native checkboxes need a real boolean.
+    YardsToKmDB.enabled = YardsToKmDB.enabled ~= false
     for _, option in ipairs(OPTIONS) do
         if not OptionValueIndex(option) then
             YardsToKmDB[option.key] = option.values[1][1]
@@ -195,7 +205,7 @@ local function ConvertFontString(fontString)
 end
 
 local function HookFontString(fontString)
-    if hookedFontStrings[fontString] or not fontString:IsObjectType("FontString") then
+    if hookedFontStrings[fontString] or not IsObjectOfType(fontString, "FontString") then
         return
     end
 
@@ -209,9 +219,13 @@ local function HookFontString(fontString)
     RefreshFontString(fontString)
 end
 
-local function RefreshTooltip(tooltip)
-    for _, region in ipairs({ tooltip:GetRegions() }) do
-        if region:IsObjectType("FontString") then
+-- Walk regions as varargs instead of packing them into a table: these run for
+-- every frame on each scan and every 0.1 s on a shown tooltip, so a table per
+-- call adds up to megabytes of garbage.
+local function RefreshTooltipRegions(...)
+    for index = 1, select("#", ...) do
+        local region = select(index, ...)
+        if IsObjectOfType(region, "FontString") then
             -- Native tooltip updates can bypass the Lua text setter hooks.
             local text = region:GetText()
             if IsReadableText(text) and text ~= displayedTexts[region] then
@@ -222,8 +236,12 @@ local function RefreshTooltip(tooltip)
     end
 end
 
+local function RefreshTooltip(tooltip)
+    RefreshTooltipRegions(tooltip:GetRegions())
+end
+
 local function HookTooltip(tooltip)
-    if hookedTooltips[tooltip] or IsForbidden(tooltip) or not tooltip:IsObjectType("GameTooltip") then
+    if hookedTooltips[tooltip] or IsForbidden(tooltip) or not IsObjectOfType(tooltip, "GameTooltip") then
         return
     end
 
@@ -242,14 +260,23 @@ local function HookTooltip(tooltip)
     end)
 end
 
+local function HookRegions(...)
+    for index = 1, select("#", ...) do
+        HookFontString((select(index, ...)))
+    end
+end
+
+-- Called through pcall: restricted frames error on GetRegions.
+local function HookFrameRegions(frame)
+    HookRegions(frame:GetRegions())
+end
+
 local function ScanFrames()
     local frame = EnumerateFrames()
     while frame do
         if not IsForbidden(frame) then
             HookTooltip(frame)
-            for _, region in ipairs({ frame:GetRegions() }) do
-                HookFontString(region)
-            end
+            pcall(HookFrameRegions, frame)
         end
         frame = EnumerateFrames(frame)
     end
@@ -278,11 +305,23 @@ local function OptionLabel(option)
     return option.values[OptionValueIndex(option)][2]
 end
 
+local SETTINGS_NAME = "Yards to Kilometers"
+local ENABLED_LABEL = "Convert visible yard measurements"
+-- Native Settings objects by saved-variable key, on clients that use them.
+local nativeSettings = {}
+
 local function UpdateSettingsControls()
     if settingsControls.enabled then
         settingsControls.enabled:SetChecked(YardsToKmDB.enabled)
         for _, option in ipairs(OPTIONS) do
             settingsControls[option.key]:SetText(OptionLabel(option))
+        end
+    end
+    -- Keep native controls in step with /ytk and compartment changes. SetValue
+    -- calls back into SetSetting, which then finds the value already matches.
+    for key, setting in pairs(nativeSettings) do
+        if setting:GetValue() ~= YardsToKmDB[key] then
+            setting:SetValue(YardsToKmDB[key])
         end
     end
 end
@@ -293,19 +332,76 @@ local function SetSetting(key, value)
     UpdateSettingsControls()
 end
 
+-- Blizzard-style settings page with a checkbox and dropdowns (Mainline API,
+-- used by WoW Forever). Returns the category, or nil if any piece is missing.
+local function CreateNativeSettings()
+    if WOW_PROJECT_ID and WOW_PROJECT_CLASSIC and WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
+        return nil
+    end
+    for _, name in ipairs({ "RegisterVerticalLayoutCategory", "RegisterAddOnSetting", "CreateCheckbox",
+            "CreateDropdown", "CreateControlTextContainer", "RegisterAddOnCategory" }) do
+        if not Settings[name] then
+            return nil
+        end
+    end
+    local varTypes = Settings.VarType or {}
+
+    local category = Settings.RegisterVerticalLayoutCategory(SETTINGS_NAME)
+    local registered = {}
+    local function Register(key, varType, label, default)
+        local setting = Settings.RegisterAddOnSetting(category, addonName .. "_" .. key, key, YardsToKmDB,
+            varType, label, default)
+        setting:SetValueChangedCallback(function(_, value)
+            SetSetting(key, value)
+        end)
+        registered[key] = setting
+        return setting
+    end
+
+    local enabled = Register("enabled", varTypes.Boolean or "boolean", ENABLED_LABEL, true)
+    Settings.CreateCheckbox(category, enabled, "Turn off to show the original yard values.")
+    for _, option in ipairs(OPTIONS) do
+        local setting = Register(option.key, varTypes.String or "string", option.label, option.values[1][1])
+        Settings.CreateDropdown(category, setting, function()
+            local container = Settings.CreateControlTextContainer()
+            for _, value in ipairs(option.values) do
+                container:Add(value[1], value[2])
+            end
+            return container:GetData()
+        end, option.tooltip)
+    end
+
+    Settings.RegisterAddOnCategory(category)
+    nativeSettings = registered
+    return category
+end
+
 local function CreateSettingsPanel()
-    if not Settings or not Settings.RegisterCanvasLayoutCategory or not Settings.RegisterAddOnCategory then
-        PrintStatus("in-game settings panel is unavailable in this client; use /ytk on or /ytk off.")
+    if not Settings or not Settings.RegisterAddOnCategory then
+        PrintStatus("in-game settings panel is unavailable in this client; type /ytk for commands.")
         return
     end
 
+    local ok, category = pcall(CreateNativeSettings)
+    if ok and category then
+        settingsCategory = category
+        return
+    elseif not ok then
+        PrintStatus("using the basic settings page (" .. tostring(category) .. ").")
+    end
+    if not Settings.RegisterCanvasLayoutCategory then
+        PrintStatus("in-game settings panel is unavailable in this client; type /ytk for commands.")
+        return
+    end
+
+    -- Fallback page for Classic Era: cycling buttons on a canvas.
     local panel = CreateFrame("Frame")
-    panel.name = "Yards to Kilometers"
+    panel.name = SETTINGS_NAME
     panel:Hide()
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText("Yards to Kilometers")
+    title:SetText(SETTINGS_NAME)
 
     local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -8)
@@ -316,7 +412,7 @@ local function CreateSettingsPanel()
     enabled:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -20)
     local enabledLabel = panel:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     enabledLabel:SetPoint("LEFT", enabled, "RIGHT", 6, 0)
-    enabledLabel:SetText("Convert visible yard measurements")
+    enabledLabel:SetText(ENABLED_LABEL)
     enabled:SetScript("OnClick", function(self)
         SetSetting("enabled", self:GetChecked())
     end)

@@ -9,6 +9,7 @@ files["YardsToKm.lua"] = {
     read_globals = {
         "C_Timer", "CreateFrame", "DEFAULT_CHAT_FRAME", "EnumerateFrames", "Enum",
         "GameTooltip", "hooksecurefunc", "InCombatLockdown", "issecretvalue", "Settings", "TooltipDataProcessor",
+        "WOW_PROJECT_CLASSIC", "WOW_PROJECT_ID",
     },
 }
 
