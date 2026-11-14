@@ -25,6 +25,8 @@ function tooltip:IsObjectType(kind) return kind == "GameTooltip" end
 function tooltip:GetRegions() return text, label end
 function tooltip:HasScript() return true end
 function tooltip:HookScript(event, callback) self.scripts[event] = callback end
+-- Native-style rebuild: writes the line without calling SetText.
+function tooltip:SetAction() text.text = "33 yd range" end
 
 function EnumerateFrames(previous)
     if not previous then return tooltip end
@@ -53,11 +55,15 @@ SlashCmdList.YARDSTOKM("on")
 assert(text.text == "7 m - 32 m range", text.text)
 assert(label.text == "Precise", "Enabling conversion changed an unrelated label")
 
+-- Every frame is checked, so a native rewrite never survives a frame.
 text.text = "40 yd range"
-tooltip.scripts.OnUpdate(tooltip, 0.05)
-assert(text.text == "40 yd range", text.text)
-tooltip.scripts.OnUpdate(tooltip, 0.05)
+tooltip.scripts.OnUpdate(tooltip, 0.007)
 assert(text.text == "37 m range", text.text)
+
+-- Action buttons call SetAction again while a cooldown counts down; the
+-- rebuild writes yards natively and must be converted right away.
+tooltip:SetAction()
+assert(text.text == "30 m range", text.text)
 
 text:SetFormattedText("%d-%d yd range", 8, 35)
 assert(text.text == "7 m - 32 m range", text.text)

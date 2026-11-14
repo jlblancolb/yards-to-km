@@ -84,8 +84,8 @@ shows whether conversion is on. In combat, settings open once combat ends.
 The addon hooks accessible UI text regions and periodically rescans for newly
 created ones, so visible spell tooltips or range labels that expose yard values
 may be converted automatically, including text set through formatted font
-string calls. Visible tooltip text is also checked every 0.1 seconds to catch
-native spell-range updates and later changes made by other addons.
+string calls. Visible tooltip text is also checked every frame and after tooltip
+refreshes (such as the cooldown countdown) to catch native spell-range updates and later changes made by other addons.
 This changes only displayed text: spell range checks and the
 game's underlying yard-based APIs remain unchanged. Other game and addon UI
 text may not be accessible, and hyperlink or texture markup is left unchanged.
