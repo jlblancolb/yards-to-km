@@ -220,7 +220,7 @@ local function HookFontString(fontString)
 end
 
 -- Walk regions as varargs instead of packing them into a table: these run for
--- every frame on each scan and every 0.1 s on a shown tooltip, so a table per
+-- every frame on each scan and every game frame on a shown tooltip, so a table per
 -- call adds up to megabytes of garbage.
 local function RefreshTooltipRegions(...)
     for index = 1, select("#", ...) do
@@ -240,6 +240,14 @@ local function RefreshTooltip(tooltip)
     RefreshTooltipRegions(tooltip:GetRegions())
 end
 
+-- Setters that action and spell buttons call again on a timer while a cooldown
+-- counts down. On Mainline that rebuild rewrites the original yard text
+-- without passing through the FontString hooks, so convert right after it.
+local TOOLTIP_SETTERS = {
+    "SetAction", "SetSpell", "SetSpellByID", "SetSpellBookItem", "SetPetAction",
+    "SetShapeshift", "SetHyperlink",
+}
+
 local function HookTooltip(tooltip)
     if hookedTooltips[tooltip] or IsForbidden(tooltip) or not IsObjectOfType(tooltip, "GameTooltip") then
         return
@@ -250,14 +258,15 @@ local function HookTooltip(tooltip)
     if tooltip:HasScript("OnTooltipSetSpell") then
         tooltip:HookScript("OnTooltipSetSpell", RefreshTooltip)
     end
-    local elapsedTime = 0
-    tooltip:HookScript("OnUpdate", function(self, elapsed)
-        elapsedTime = elapsedTime + elapsed
-        if elapsedTime >= 0.1 then
-            elapsedTime = 0
-            RefreshTooltip(self)
+    for _, setter in ipairs(TOOLTIP_SETTERS) do
+        if type(tooltip[setter]) == "function" then
+            hooksecurefunc(tooltip, setter, RefreshTooltip)
         end
-    end)
+    end
+    -- Check every frame while shown: refreshes from other frames' OnUpdate
+    -- would otherwise show yards until the next check. Unchanged lines cost
+    -- only a string comparison.
+    tooltip:HookScript("OnUpdate", RefreshTooltip)
 end
 
 local function HookRegions(...)
@@ -271,15 +280,37 @@ local function HookFrameRegions(frame)
     HookRegions(frame:GetRegions())
 end
 
-local function ScanFrames()
-    local frame = EnumerateFrames()
+-- A full pass over every frame can exceed WoW's per-script time limit ("script
+-- ran too long") when other addons create thousands of frames, so the scan
+-- stops after a short time budget and resumes on the next game frame. Frames
+-- are never destroyed, so resuming from the saved frame is safe.
+local SCAN_BUDGET_MS = 4
+local nextScanFrame
+
+local function ContinueScan()
+    local started = debugprofilestop and debugprofilestop()
+    local frame = nextScanFrame
     while frame do
         if not IsForbidden(frame) then
             HookTooltip(frame)
             pcall(HookFrameRegions, frame)
         end
         frame = EnumerateFrames(frame)
+        if frame and started and C_Timer.After and debugprofilestop() - started > SCAN_BUDGET_MS then
+            nextScanFrame = frame
+            C_Timer.After(0, ContinueScan)
+            return
+        end
     end
+    nextScanFrame = nil
+end
+
+local function ScanFrames()
+    if nextScanFrame then
+        return -- a scan is already in progress
+    end
+    nextScanFrame = EnumerateFrames()
+    ContinueScan()
 end
 
 local function HookSpellTooltipData()
@@ -496,9 +527,26 @@ SlashCmdList.YARDSTOKM = function(message)
     if setting then
         SetSetting(setting[1], setting[2])
         PrintStatus(setting[3])
+    elseif command == "debug" then
+        -- Show what each GameTooltip line holds, to diagnose lines left in yards.
+        PrintStatus("version " .. tostring(C_AddOns and C_AddOns.GetAddOnMetadata
+            and C_AddOns.GetAddOnMetadata(addonName, "Version")) .. ", tooltip hooked: "
+            .. tostring(hookedTooltips[GameTooltip] == true) .. ", shown: " .. tostring(GameTooltip:IsShown()))
+        for index = 1, select("#", GameTooltip:GetRegions()) do
+            local region = select(index, GameTooltip:GetRegions())
+            if IsObjectOfType(region, "FontString") then
+                local text = region:GetText()
+                if issecretvalue and issecretvalue(text) then
+                    PrintStatus(index .. ": <secret>")
+                elseif text and text ~= "" then
+                    PrintStatus(index .. ": " .. text:gsub("|", "||")
+                        .. (hookedFontStrings[region] and "" or " (not hooked)"))
+                end
+            end
+        end
     elseif command == "scan" then
         ScanFrames()
-        PrintStatus("scanned UI text.")
+        PrintStatus("scanning UI text.")
     else
         local status = { "conversion " .. (YardsToKmDB.enabled and "on" or "off") }
         for _, option in ipairs(OPTIONS) do

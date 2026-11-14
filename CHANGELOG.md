@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1 (2026-11-14)
+
+- WoW Forever: spell tooltips no longer flip back to yards (such as
+  `33 yd range`) while a cooldown or cast lockout is counting down.
+- The UI text scan is spread over several game frames, fixing a
+  `script ran too long` error with addons that create many frames.
+- `/ytk debug` lists the current tooltip's lines, to help report text left
+  in yards.
+
 ## 1.3.0 (2026-11-07)
 
 - WoW Forever: the settings page uses the game's own checkbox and dropdowns,
